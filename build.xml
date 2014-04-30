@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="." default="build" name="JavaSampler">
+    <property environment="env"/>
+    <property name="debuglevel" value="source,lines,vars"/>
+    <property name="target" value="1.7"/>
+    <property name="source" value="1.7"/>
+    <path id="Java Sampler.classpath">
+        <pathelement location="bin"/>
+        <pathelement location="lib/ApacheJMeter_core.jar"/>
+        <pathelement location="lib/ApacheJMeter_java.jar"/>
+    	<pathelement location="lib/ant-jmeter-1.1.1.jar"/>
+    </path>
+    <target name="init">
+        <mkdir dir="bin"/>
+        <copy includeemptydirs="false" todir="bin">
+            <fileset dir="src">
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+    <target name="clean">
+        <delete dir="bin"/>
+    </target>
+    <target depends="clean" name="cleanall"/>
+    <target depends="build-subprojects,build-project" name="build"/>
+    <target name="build-subprojects"/>
+    <target depends="init" name="build-project">
+        <echo message="${ant.project.name}: ${ant.file}"/>
+        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" includeantruntime="false" source="${source}" target="${target}">
+            <src path="src"/>
+            <classpath refid="Java Sampler.classpath"/>
+        </javac>
+    </target>
+    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects"/>
+    <target name="ShutdownClient">
+        <java classname="org.apache.jmeter.util.ShutdownClient" failonerror="true" fork="yes">
+            <classpath refid="Java Sampler.classpath"/>
+        </java>
+    </target>
+	<target name="run-jmeter" depends="clean">
+		<taskdef name="jmeter" classpath="${env.ANT_HOME}/lib/ant-jmeter-1.1.1.jar"
+			classname="org.programmerplanet.ant.taskdefs.jmeter.JMeterTask"/>
+		<echo message="JMETER_HOME: ${env.JMETER_HOME}"/>
+		<jmeter
+		    jmeterhome="${env.JMETER_HOME}"
+			resultlog="jmeter/JMeterResults.jtl">
+			<testplans dir="jmeter/" includes="*.jmx"/>
+			<property name="request.threads" value="1"/>
+			<property name="request.loop" value="10"/>
+			
+			<!-- Force suitable defaults -->
+			<property name="jmeter.save.saveservice.output_format" value="xml"/>
+			<property name="jmeter.save.saveservice.assertion_results" value="all"/>
+			<property name="jmeter.save.saveservice.bytes" value="true"/>
+			<property name="file_format.testlog" value="${format}"/>
+			<property name="jmeter.save.saveservice.response_data.on_error" value="${funcMode}"/>
+			<property name="jmeter.save.saveservice.response_data" value="true"/>
+			<property name="jmeter.save.saveservice.samplerData" value="true"/>
+			<property name="jmeter.save.saveservice.responseHeaders" value="true"/>
+			<property name="jmeter.save.saveservice.requestHeaders" value="true"/>
+			<property name="jmeter.save.saveservice.encoding" value="true"/>
+			<property name="jmeter.save.saveservice.url" value="true"/>
+			<property name="jmeter.save.saveservice.filename" value="true"/>
+			<property name="jmeter.save.saveservice.hostname" value="true"/>
+			<property name="jmeter.save.saveservice.thread_counts" value="true"/>
+			<property name="jmeter.save.saveservice.sample_count" value="true"/>
+			<property name="jmeter.save.saveservice.idle_time" value="true"/>  
+		</jmeter>
+	</target>
+	
+	<target name="jmeter-reports" depends="run-jmeter">
+		<xslt
+			in="jmeter/JMeterResults.jtl"
+			out="jmeter/JMeterResults.html"
+			style="jmeter/jmeter-results-report_21.xsl"/>
+	</target> 	
+	
+</project>
